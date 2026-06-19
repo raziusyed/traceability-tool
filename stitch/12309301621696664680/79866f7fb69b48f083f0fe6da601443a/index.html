@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en" style=""><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Traceability Hub | Supply Chain Tree View</title>
+<!-- Inter Font -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed": "#d3e4fe",
+                        "surface-tint": "#565e74",
+                        "on-secondary-fixed": "#00210b",
+                        "primary-container": "#131b2e",
+                        "outline": "#76777d",
+                        "on-secondary-container": "#24703e",
+                        "on-primary-fixed": "#131b2e",
+                        "tertiary-fixed-dim": "#b7c8e1",
+                        "tertiary": "#000000",
+                        "tertiary-container": "#0b1c30",
+                        "on-secondary": "#ffffff",
+                        "surface-container-high": "#e6e8ea",
+                        "outline-variant": "#c6c6cd",
+                        "error-container": "#ffdad6",
+                        "background": "#f7f9fb",
+                        "surface": "#f7f9fb",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-container": "#a4f1b2",
+                        "inverse-surface": "#2d3133",
+                        "primary-fixed-dim": "#bec6e0",
+                        "primary": "#000000",
+                        "on-surface-variant": "#45464d",
+                        "surface-container": "#eceef0",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed": "#0b1c30",
+                        "on-background": "#191c1e",
+                        "secondary-fixed": "#a6f4b5",
+                        "on-secondary-fixed-variant": "#005226",
+                        "surface-dim": "#d8dadc",
+                        "on-tertiary-container": "#75859d",
+                        "on-primary-container": "#7c839b",
+                        "on-tertiary-fixed-variant": "#38485d",
+                        "on-error-container": "#93000a",
+                        "on-error": "#ffffff",
+                        "secondary-fixed-dim": "#8bd79b",
+                        "on-tertiary": "#ffffff",
+                        "surface-variant": "#e0e3e5",
+                        "inverse-on-surface": "#eff1f3",
+                        "error": "#ba1a1a",
+                        "surface-bright": "#f7f9fb",
+                        "surface-container-low": "#f2f4f6",
+                        "inverse-primary": "#bec6e0",
+                        "surface-container-highest": "#e0e3e5",
+                        "secondary": "#1f6c3a",
+                        "primary-fixed": "#dae2fd",
+                        "on-primary-fixed-variant": "#3f465c",
+                        "on-surface": "#191c1e"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "margin-desktop": "48px",
+                        "base": "4px",
+                        "max-width": "1440px",
+                        "gutter": "24px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "label-md": ["Inter"],
+                        "table-data": ["Inter"],
+                        "headline-xl": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-lg-mobile": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "table-data": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                        "headline-xl": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .active-tree-item {
+            background-color: #eceef0;
+            border-left: 4px solid #000000;
+        }
+        .tree-line-v {
+            position: absolute;
+            left: 20px;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background-color: #cbd5e1;
+        }
+        .tree-line-h {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            width: 16px;
+            height: 1px;
+            background-color: #cbd5e1;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+        }
+        details > summary { list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen">
+<!-- TopNavBar -->
+<header class="bg-surface-container-lowest dark:bg-surface-container-low border-b border-outline-variant dark:border-outline w-full h-16 fixed top-0 left-0 z-50 flex justify-between items-center px-margin-desktop">
+<div class="flex items-center gap-8">
+<span class="font-headline-lg text-headline-lg font-bold text-primary dark:text-inverse-primary">Traceability Hub</span>
+<div class="hidden md:flex items-center gap-6">
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 cursor-pointer active:opacity-80 hover:bg-surface-container transition-colors rounded-full">
+<span class="material-symbols-outlined">monitor_heart</span>
+</button>
+<button class="p-2 cursor-pointer active:opacity-80 hover:bg-surface-container transition-colors rounded-full">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 cursor-pointer active:opacity-80 hover:bg-surface-container transition-colors rounded-full">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</header>
+<!-- SideNavBar -->
+<!-- Main Content Area -->
+<main class="pt-16 flex h-[calc(100vh-4rem)] overflow-hidden">
+<!-- Vertical File-Tree View -->
+<div class="flex-1 overflow-y-auto bg-white p-12 flex flex-col" id="tree-container"><div class="flex-1 overflow-y-auto mb-8"><div class="mb-10"><h1 class="font-headline-xl text-headline-xl text-primary">Trail Runner</h1><div class="flex items-center gap-2 mt-2"><span class="text-on-surface-variant font-body-md">Revision C</span><span class="text-[10px] bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded font-bold uppercase">Latest Revision</span></div></div><div class="max-w-2xl border border-outline-variant rounded-xl overflow-hidden bg-surface-container-lowest"><div class="group"><div class="flex items-center gap-3 px-4 py-4 hover:bg-surface-container cursor-pointer border-b border-outline-variant" id="node-root"><span class="material-symbols-outlined text-primary">inventory_2</span><div class="flex-1"><span class="font-bold text-primary">Trail Runner</span><span class="ml-2 text-[10px] bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded font-bold uppercase">Final Product</span></div><span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors">chevron_right</span></div></div><div class="pl-4"><details class="relative" open=""><div class="tree-line-v h-full"></div><summary class="flex items-center gap-3 px-4 py-3 hover:bg-surface-container cursor-pointer relative" id="node-upper"><div class="tree-line-h"></div><span class="material-symbols-outlined text-primary z-10">layers</span><div class="flex-1 z-10"><span class="font-bold text-primary">Upper</span><span class="ml-2 text-[10px] bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded font-bold uppercase">Assembly</span></div><span class="material-symbols-outlined text-outline transition-transform duration-200">expand_more</span></summary><div class="pl-8 pb-2"><div class="relative flex items-center gap-3 px-4 py-2 hover:bg-surface-container cursor-pointer active-tree-item" id="node-mesh"><div class="tree-line-v h-full -left-4"></div><div class="tree-line-h -left-4"></div><span class="material-symbols-outlined text-on-surface-variant text-sm">circle</span><span class="text-sm font-medium">Recycled Polyester Mesh</span></div><div class="relative flex items-center gap-3 px-4 py-2 hover:bg-surface-container cursor-pointer" id="node-lining"><div class="tree-line-v h-1/2 -left-4 top-0"></div><div class="tree-line-h -left-4"></div><span class="material-symbols-outlined text-on-surface-variant text-sm">circle</span><span class="text-sm font-medium">Cotton Lining</span></div></div></details><details class="relative" open=""><div class="tree-line-v h-full"></div><summary class="flex items-center gap-3 px-4 py-3 hover:bg-surface-container cursor-pointer relative" id="node-midsole"><div class="tree-line-h"></div><span class="material-symbols-outlined text-primary z-10">layers</span><div class="flex-1 z-10"><span class="font-bold text-primary">Midsole</span><span class="ml-2 text-[10px] bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded font-bold uppercase">Assembly</span></div><span class="material-symbols-outlined text-outline">expand_more</span></summary><div class="pl-8 pb-2"><div class="relative flex items-center gap-3 px-4 py-2 hover:bg-surface-container cursor-pointer" id="node-eva"><div class="tree-line-v h-1/2 -left-4 top-0"></div><div class="tree-line-h -left-4"></div><span class="material-symbols-outlined text-on-surface-variant text-sm">circle</span><span class="text-sm font-medium">EVA Foam</span></div></div></details><details class="relative" open=""><div class="tree-line-v h-full"></div><summary class="flex items-center gap-3 px-4 py-3 hover:bg-surface-container cursor-pointer relative" id="node-outsole"><div class="tree-line-h"></div><span class="material-symbols-outlined text-primary z-10">foundation</span><div class="flex-1 z-10"><span class="font-bold text-primary">Outsole</span><span class="ml-2 text-[10px] bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded font-bold uppercase">Assembly</span></div><span class="material-symbols-outlined text-outline">expand_more</span></summary><div class="pl-8 pb-2"><div class="relative flex items-center gap-3 px-4 py-2 hover:bg-surface-container cursor-pointer" id="node-rubber"><div class="tree-line-v h-1/2 -left-4 top-0"></div><div class="tree-line-h -left-4"></div><span class="material-symbols-outlined text-on-surface-variant text-sm">circle</span><span class="text-sm font-medium">Recycled Rubber</span></div></div></details><details class="relative" open=""><div class="tree-line-v h-1/2 bottom-1/2"></div><summary class="flex items-center gap-3 px-4 py-3 hover:bg-surface-container cursor-pointer relative" id="node-laces-group"><div class="tree-line-h"></div><span class="material-symbols-outlined text-primary z-10">straighten</span><div class="flex-1 z-10"><span class="font-bold text-primary">Laces</span><span class="ml-2 text-[10px] bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded font-bold uppercase">Assembly</span></div><span class="material-symbols-outlined text-outline">expand_more</span></summary><div class="pl-8 pb-2"><div class="relative flex items-center gap-3 px-4 py-2 hover:bg-surface-container cursor-pointer" id="node-recycled-poly"><div class="tree-line-v h-1/2 -left-4 top-0"></div><div class="tree-line-h -left-4"></div><span class="material-symbols-outlined text-on-surface-variant text-sm">circle</span><span class="text-sm font-medium">Recycled Polyester</span></div></div></details></div></div></div><div class="border-t border-outline-variant pt-8 mt-auto"><div class="flex items-center justify-between mb-6"><div><h2 class="font-headline-lg text-headline-lg text-primary">Production Journey</h2><p class="text-on-surface-variant text-sm">Trace the lifecycle of specific production batches</p></div><div class="flex bg-surface-container rounded-lg p-1"><button class="px-4 py-1.5 rounded bg-white text-primary text-xs font-bold shadow-sm" id="batch-btn-1">#RP-2024-08</button><button class="px-4 py-1.5 rounded text-on-surface-variant text-xs font-medium hover:bg-surface-container-high transition-colors" id="batch-btn-2">#RP-2023-12</button></div></div>
+<div class="space-y-8">
+<div>
+<h3 class="font-bold text-sm text-primary mb-6">Traceability Timeline</h3>
+<div class="flex items-start justify-between relative px-4"><div class="absolute top-4 left-8 right-8 h-0.5 bg-outline-variant/30 -z-0"></div><div class="flex flex-col items-center gap-3 relative z-10 w-1/5"><div class="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-white"><span class="material-symbols-outlined text-sm">check</span></div><div class="text-center"><div class="text-xs font-bold">Sourcing</div><div class="text-[10px] text-on-surface-variant">May 10</div></div></div><div class="flex flex-col items-center gap-3 relative z-10 w-1/5"><div class="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-white"><span class="material-symbols-outlined text-sm">check</span></div><div class="text-center"><div class="text-xs font-bold">Processing</div><div class="text-[10px] text-on-surface-variant">May 15</div></div></div><div class="flex flex-col items-center gap-3 relative z-10 w-1/5"><div class="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-white"><span class="material-symbols-outlined text-sm">check</span></div><div class="text-center"><div class="text-xs font-bold">Spinning</div><div class="text-[10px] text-on-surface-variant">May 20</div></div></div><div class="flex flex-col items-center gap-3 relative z-10 w-1/5"><div class="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-white"><span class="material-symbols-outlined text-sm">check</span></div><div class="text-center"><div class="text-xs font-bold">Weaving</div><div class="text-[10px] text-on-surface-variant">May 25</div></div></div><div class="flex flex-col items-center gap-3 relative z-10 w-1/5"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white"><span class="material-symbols-outlined text-sm">inventory</span></div><div class="text-center"><div class="text-xs font-bold">Finished</div><div class="text-[10px] text-on-surface-variant">June 01</div></div></div></div>
+</div>
+<div>
+<h3 class="font-bold text-sm text-primary mb-4">Shipment Information</h3>
+<div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-4">
+<div class="text-[10px] text-on-surface-variant font-bold uppercase mb-1">Quantity Received</div>
+<div class="font-table-data text-primary" id="ship-qty-received">5,000 units</div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-4">
+<div class="text-[10px] text-on-surface-variant font-bold uppercase mb-1">Quantity in Inventory</div>
+<div class="font-table-data text-primary" id="ship-qty-inv">1,200 units</div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-4">
+<div class="text-[10px] text-on-surface-variant font-bold uppercase mb-1">Quantity Shipped</div>
+<div class="font-table-data text-primary" id="ship-qty-shipped">3,800 units</div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-4">
+<div class="text-[10px] text-on-surface-variant font-bold uppercase mb-1">Destination Warehouse</div>
+<div class="font-table-data text-primary" id="ship-dest">Ho Chi Minh City, VN</div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-4">
+<div class="text-[10px] text-on-surface-variant font-bold uppercase mb-1">Shipment Number</div>
+<div class="font-table-data text-primary" id="ship-num">SHP-992384-VX</div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-4">
+<div class="text-[10px] text-on-surface-variant font-bold uppercase mb-1">Delivery Status</div>
+<div class="font-table-data text-secondary font-bold" id="ship-status">Delivered</div>
+</div>
+</div>
+</div>
+</div>
+</div></div>
+<!-- Right Side Detail Panel -->
+<aside class="w-96 bg-surface-container-lowest border-l border-outline-variant p-8 flex flex-col overflow-y-auto">
+<div class="" id="panel-content" style="opacity: 1; transition: opacity 0.2s;">
+<div class="mb-8">
+<h2 class="font-headline-lg text-headline-lg text-primary mb-1" id="node-title">Recycled Polyester Mesh</h2>
+<p class="text-on-surface-variant font-label-md uppercase tracking-wider" id="node-type">Material</p>
+</div>
+<div class="space-y-6">
+<!-- Verification Status -->
+<div class="p-4 rounded-lg bg-surface-container flex items-center gap-4">
+<div class="w-10 h-10 rounded-full flex items-center justify-center bg-secondary-container text-on-secondary-container" id="status-icon"><span class="material-symbols-outlined" style='font-variation-settings: "FILL" 1;'>verified</span></div>
+<div>
+<div class="font-label-md text-label-md text-primary">Verification Status</div>
+<div class="text-secondary font-bold" id="status-text">Verified &amp; Active</div>
+</div>
+</div>
+<!-- Details Table -->
+<div class="space-y-4">
+<div class="border-b border-outline-variant/30 pb-3">
+<div class="text-[10px] text-on-surface-variant font-bold uppercase mb-1">Supplier</div>
+<div class="font-table-data text-table-data text-primary" id="detail-supplier">EcoFiber Solutions</div>
+</div>
+<div class="border-b border-outline-variant/30 pb-3">
+<div class="text-[10px] text-on-surface-variant font-bold uppercase mb-1">Country of Origin</div>
+<div class="font-table-data text-table-data text-primary" id="detail-country">Taiwan</div>
+</div>
+<div class="border-b border-outline-variant/30 pb-3">
+<div class="text-[10px] text-on-surface-variant font-bold uppercase mb-1">Latest Batch</div>
+<div class="flex justify-between items-center" id="detail-latest-batch">
+<span class="font-table-data text-table-data text-primary">#RP-2024-08</span>
+<span class="text-xs text-on-surface-variant">5,000 units</span>
+</div>
+</div>
+<div class="border-b border-outline-variant/30 pb-3">
+<div class="text-[10px] text-on-surface-variant font-bold uppercase mb-1">Previous Batches</div>
+<div class="font-table-data text-table-data text-primary" id="detail-prev-batch"><ul class="space-y-1"><li class="flex justify-between"><span>#RP-2024-07</span><span class="text-xs text-on-surface-variant">4,800 units</span></li><li class="flex justify-between"><span>#RP-2024-06</span><span class="text-xs text-on-surface-variant">5,200 units</span></li></ul></div>
+</div>
+</div>
+<!-- Map/Visual Insight -->
+<div class="mt-8">
+<div class="text-[10px] text-on-surface-variant font-bold uppercase mb-3">Facility Location</div>
+<div class="w-full h-32 rounded-lg bg-surface-container-high overflow-hidden relative group">
+<img class="w-full h-full object-cover" data-alt="Footwear manufacturing facility" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAJX8s-0WH7QFx2g3JBki_hG2I5zo6M7yhSXK-u1J7qqCQM3c6Wv4MfJSz-2mxj8oR7aRqv9nRkCtYtEoZO0YToofdrwhF9PcDAtdMNo0aW9EPV06EFHWpIonK64ch8JLzXPhTnXipRThdTNJQJsmLD6ysp_bHZNo_LQprnwUR3bhUR8Jnjp5a1NXF2lJ7UmBIZ-k54h5i_2uxNxvnicgXJ0FsWbATg_5XfMwvPQX4OlZddMxPa2Glfi6wvEVD6w7lmVOZ4OIFuaQXy"/>
+<div class="absolute inset-0 bg-primary/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="bg-white px-3 py-1 rounded-full text-xs font-bold text-primary">View Facility Docs</span>
+</div>
+</div>
+</div>
+<!-- Compliance Section -->
+</div>
+</div>
+<div class="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-50 hidden" id="panel-empty">
+<span class="material-symbols-outlined text-outline" style="font-size: 48px;">info</span>
+<p class="font-body-md">Select an item from the <br/>tree to view details</p>
+</div>
+</aside>
+</main>
+<script>
+        const nodeData = {
+            'root': {
+                title: 'Trail Runner',
+                type: 'Final Product',
+                supplier: 'Global Footwear Assembly Co.',
+                country: 'Vietnam',
+                latestBatch: { id: '#BT-774-VX-2024', qty: '10,000 units' },
+                prevBatches: [
+                    { id: '#BT-773-VX-2024', qty: '9,500 units' },
+                    { id: '#BT-772-VX-2024', qty: '10,200 units' }
+                ],
+                status: 'Verified',
+                shipment: { received: '-', inv: '2,000 units', shipped: '8,000 units', dest: 'Global Distribution Center', num: 'SHP-TR-001', status: 'Delivered' }
+            },
+            'upper': {
+                title: 'Upper Assembly',
+                type: 'Sub-Assembly',
+                supplier: 'KnitTech Materials Ltd.',
+                country: 'Taiwan',
+                latestBatch: { id: '#UP-112-90', qty: '5,000 units' },
+                prevBatches: [
+                    { id: '#UP-112-89', qty: '4,800 units' }
+                ],
+                status: 'Verified',
+                shipment: { received: '5,000 units', inv: '1,000 units', shipped: '4,000 units', dest: 'Vietnam Assembly', num: 'SHP-UP-092', status: 'Delivered' }
+            },
+            'sole': {
+                title: 'Sole Unit',
+                type: 'Sub-Assembly',
+                supplier: 'Duracraft Soles Inc.',
+                country: 'Indonesia',
+                latestBatch: { id: '#SL-992-04', qty: '5,000 units' },
+                prevBatches: [
+                    { id: '#SL-992-03', qty: '4,800 units' }
+                ],
+                status: 'Verified',
+                shipment: { received: '5,000 units', inv: '500 units', shipped: '4,500 units', dest: 'Vietnam Assembly', num: 'SHP-SL-881', status: 'In Transit' }
+            },
+            'hardware': {
+                title: 'Hardware Components',
+                type: 'Raw Materials',
+                supplier: 'Precision Zinc & Metal',
+                country: 'China',
+                latestBatch: { id: '#HW-PND-55', qty: '20,000 units' },
+                prevBatches: [
+                    { id: '#HW-PND-54', qty: '20,000 units' }
+                ],
+                status: 'Pending',
+                shipment: { received: '20,000 units', inv: '15,000 units', shipped: '5,000 units', dest: 'Taiwan Knitting', num: 'SHP-HW-221', status: 'Pending' }
+            },
+            'mesh': {
+                title: 'Recycled Polyester Mesh',
+                type: 'Material',
+                supplier: 'EcoThread Taiwan',
+                country: 'Taiwan',
+                latestBatch: { id: '#RP-2024-08', qty: '5,000 units' },
+                prevBatches: [
+                    { id: '#RP-2024-07', qty: '4,800 units' },
+                    { id: '#RP-2024-06', qty: '5,200 units' }
+                ],
+                status: 'Verified',
+                shipment: { received: '5,000 units', inv: '1,200 units', shipped: '3,800 units', dest: 'Ho Chi Minh City, VN', num: 'SHP-992384-VX', status: 'Delivered' }
+            },
+            'laces': {
+                title: 'Nylon Laces',
+                type: 'Material',
+                supplier: 'Global Textile Solutions',
+                country: 'Thailand',
+                latestBatch: { id: '#LC-002', qty: '10,000 units' },
+                prevBatches: [
+                    { id: '#LC-001', qty: '10,000 units' }
+                ],
+                status: 'Verified',
+                shipment: { received: '10,000 units', inv: '2,000 units', shipped: '8,000 units', dest: 'Vietnam Assembly', num: 'SHP-LC-002', status: 'Delivered' }
+            },
+            'vibram': {
+                title: 'Vibram Outsole',
+                type: 'Component',
+                supplier: 'Vibram SpA',
+                country: 'Italy',
+                latestBatch: { id: '#VB-MG-01', qty: '2,000 units' },
+                prevBatches: [],
+                status: 'Verified',
+                shipment: { received: '2,000 units', inv: '500 units', shipped: '1,500 units', dest: 'Indonesia Sole Assembly', num: 'SHP-VB-111', status: 'Delivered' }
+            },
+            'insole': {
+                title: 'Algae-based Insole',
+                type: 'Component',
+                supplier: 'Bloom Sustainable Materials',
+                country: 'USA',
+                latestBatch: { id: '#BLM-202-IN', qty: '5,000 units' },
+                prevBatches: [],
+                status: 'Verified',
+                shipment: { received: '5,000 units', inv: '2,500 units', shipped: '2,500 units', dest: 'Vietnam Assembly', num: 'SHP-BL-999', status: 'In Transit' }
+            }
+        };
+
+        function selectNode(nodeId) {
+            // UI Feedback for Tree
+            document.querySelectorAll('[id^="node-"]').forEach(el => el.classList.remove('active-tree-item'));
+            const nodeEl = document.getElementById('node-' + nodeId);
+            if(nodeEl) nodeEl.classList.add('active-tree-item');
+
+            // Show Panel
+            document.getElementById('panel-empty').classList.add('hidden');
+            const content = document.getElementById('panel-content');
+            content.classList.remove('hidden');
+
+            // Fill Data
+            const data = nodeData[nodeId];
+            if(!data) return;
+            
+            document.getElementById('node-title').innerText = data.title;
+            document.getElementById('node-type').innerText = data.type;
+            document.getElementById('detail-supplier').innerText = data.supplier;
+            document.getElementById('detail-country').innerText = data.country;
+            
+            document.getElementById('detail-latest-batch').innerHTML = `
+              <span class="font-table-data text-table-data text-primary">${data.latestBatch.id}</span>
+              <span class="text-xs text-on-surface-variant">${data.latestBatch.qty}</span>
+            `;
+            
+            const prevBatchesHtml = data.prevBatches.length > 0 
+                ? `<ul class="space-y-1">${data.prevBatches.map(b => `<li class="flex justify-between"><span>${b.id}</span><span class="text-xs text-on-surface-variant">${b.qty}</span></li>`).join('')}</ul>`
+                : `<span class="text-on-surface-variant">None</span>`;
+            document.getElementById('detail-prev-batch').innerHTML = prevBatchesHtml;
+            
+            // Buttons
+            document.getElementById('batch-btn-1').innerText = data.latestBatch.id;
+            document.getElementById('batch-btn-2').innerText = data.prevBatches.length > 0 ? data.prevBatches[0].id : 'N/A';
+            
+            // Shipment Data
+            document.getElementById('ship-qty-received').innerText = data.shipment.received;
+            document.getElementById('ship-qty-inv').innerText = data.shipment.inv;
+            document.getElementById('ship-qty-shipped').innerText = data.shipment.shipped;
+            document.getElementById('ship-dest').innerText = data.shipment.dest;
+            document.getElementById('ship-num').innerText = data.shipment.num;
+            document.getElementById('ship-status').innerText = data.shipment.status;
+            
+            const statusIcon = document.getElementById('status-icon');
+            const statusText = document.getElementById('status-text');
+
+            if (data.status === 'Verified') {
+                statusIcon.className = "w-10 h-10 rounded-full flex items-center justify-center bg-secondary-container text-on-secondary-container";
+                statusIcon.innerHTML = `<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">verified</span>`;
+                statusText.innerText = "Verified & Active";
+                statusText.className = "text-secondary font-bold";
+            } else {
+                statusIcon.className = "w-10 h-10 rounded-full flex items-center justify-center bg-surface-container-high text-on-surface-variant";
+                statusIcon.innerHTML = `<span class="material-symbols-outlined">pending</span>`;
+                statusText.innerText = "Audit Pending";
+                statusText.className = "text-on-surface-variant font-bold";
+            }
+
+            // Simple fade animation
+            content.style.opacity = 0;
+            setTimeout(() => {
+                content.style.transition = "opacity 0.2s ease";
+                content.style.opacity = 1;
+            }, 10);
+        }
+
+        // Initialize with Root selected
+        window.onload = () => selectNode('root');
+        
+        // Setup tree clicks
+        document.getElementById('node-root').addEventListener('click', () => selectNode('root'));
+        document.getElementById('node-upper').addEventListener('click', () => selectNode('upper'));
+        document.getElementById('node-mesh').addEventListener('click', () => selectNode('mesh'));
+        document.getElementById('node-lining').addEventListener('click', () => selectNode('mesh')); // mockup
+        document.getElementById('node-midsole').addEventListener('click', () => selectNode('sole'));
+        document.getElementById('node-eva').addEventListener('click', () => selectNode('sole')); // mockup
+        document.getElementById('node-outsole').addEventListener('click', () => selectNode('sole'));
+        document.getElementById('node-rubber').addEventListener('click', () => selectNode('sole')); // mockup
+        document.getElementById('node-laces-group').addEventListener('click', () => selectNode('laces'));
+        document.getElementById('node-recycled-poly').addEventListener('click', () => selectNode('laces'));
+    </script>
+</body></html>
