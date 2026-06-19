@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 const traceNodes = [
   {
@@ -6,28 +6,28 @@ const traceNodes = [
     label: 'Trail Runner',
     type: 'Final Product',
     status: 'Verified',
-    icon: 'PR',
+    icon: 'product',
     children: [
       {
         id: 'upper',
         label: 'Upper',
         type: 'Assembly',
         status: 'Verified',
-        icon: 'UP',
+        icon: 'assembly',
         children: [
           {
             id: 'mesh',
             label: 'Recycled Polyester Mesh',
             type: 'Material',
             status: 'Verified',
-            icon: 'ME',
+            icon: 'material',
           },
           {
             id: 'cotton-lining',
             label: 'Cotton Lining',
             type: 'Material',
             status: 'Pending',
-            icon: 'CL',
+            icon: 'material',
           },
         ],
       },
@@ -36,14 +36,14 @@ const traceNodes = [
         label: 'Midsole',
         type: 'Assembly',
         status: 'In Transit',
-        icon: 'MI',
+        icon: 'assembly',
         children: [
           {
             id: 'eva-foam',
             label: 'EVA Foam',
             type: 'Material',
             status: 'In Transit',
-            icon: 'EV',
+            icon: 'material',
           },
         ],
       },
@@ -52,14 +52,14 @@ const traceNodes = [
         label: 'Outsole',
         type: 'Assembly',
         status: 'Verified',
-        icon: 'OU',
+        icon: 'assembly',
         children: [
           {
             id: 'recycled-rubber',
             label: 'Recycled Rubber',
             type: 'Material',
             status: 'Verified',
-            icon: 'RR',
+            icon: 'material',
           },
         ],
       },
@@ -68,20 +68,35 @@ const traceNodes = [
         label: 'Laces',
         type: 'Assembly',
         status: 'Verified',
-        icon: 'LA',
+        icon: 'assembly',
         children: [
           {
             id: 'recycled-polyester',
             label: 'Recycled Polyester',
             type: 'Material',
             status: 'Verified',
-            icon: 'RP',
+            icon: 'material',
           },
         ],
       },
     ],
   },
 ]
+
+const qualityIssueScenario = {
+  sourceNodeId: 'mesh',
+  reportedBatchId: '#RP-2024-08',
+  title: 'Material discoloration reported',
+  severity: 'Quality hold',
+  reportedBy: 'Vietnam QA Desk',
+  reportedOn: 'Jun 04',
+  impactCountLabel: '3 affected records',
+  summary:
+    'A shade variation was found during upper inspection. TraceGraph links the material lot to every downstream part and process currently exposed to the issue.',
+  containmentAction:
+    'Hold open inventory, block final release for affected Trail Runner units, and inspect upper assemblies produced from lot #RP-2024-08.',
+  impactedNodeIds: ['mesh', 'upper', 'trail-runner'],
+}
 
 const nodeDetails = {
   'trail-runner': {
@@ -369,28 +384,27 @@ const nodeDetails = {
 }
 
 const statusStyles = {
+  'Quality hold': {
+    indicator: 'bg-trace-amber text-white',
+    panel: 'border-trace-amber',
+  },
   Verified: {
-    badge: 'bg-secondary-container text-secondary-on-fixed-variant ring-secondary-fixed-dim',
     indicator: 'bg-secondary text-white',
     panel: 'border-secondary',
   },
   'In Transit': {
-    badge: 'bg-tertiary-fixed text-tertiary-on-fixed-variant ring-tertiary-fixed-dim',
     indicator: 'bg-primary-container text-white',
     panel: 'border-primary-container',
   },
   Pending: {
-    badge: 'bg-amber-100 text-trace-amber ring-amber-200',
     indicator: 'bg-amber-500 text-white',
     panel: 'border-trace-amber',
   },
   Complete: {
-    badge: 'bg-secondary-container text-secondary-on-fixed-variant ring-secondary-fixed-dim',
     indicator: 'bg-secondary text-white',
     panel: 'border-secondary',
   },
   Current: {
-    badge: 'bg-primary-container text-white ring-primary-container',
     indicator: 'bg-primary-container text-white',
     panel: 'border-primary-container',
   },
@@ -405,50 +419,112 @@ const shipmentFields = [
   ['Delivery Status', 'status'],
 ]
 
-function StatusBadge({ status }) {
-  const style = statusStyles[status]?.badge ?? statusStyles.Pending.badge
-
+function WarningIcon({ className = 'size-4' }) {
   return (
-    <span className={`inline-flex rounded-lg px-2.5 py-1 text-label-md uppercase ring-1 ${style}`}>
-      {status}
-    </span>
+    <svg aria-hidden="true" className={className} viewBox="0 0 24 24" fill="none">
+      <path
+        d="M12 4.5 21 20H3L12 4.5Z"
+        stroke="currentColor"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+      />
+      <path d="M12 9v5M12 17h.01" stroke="currentColor" strokeLinecap="round" strokeWidth="2" />
+    </svg>
   )
 }
 
-function TreeNode({ node, depth = 0, selectedNodeId, onSelect }) {
+function TreeIcon({ type }) {
+  if (type === 'product') {
+    return (
+      <svg aria-hidden="true" className="size-4" viewBox="0 0 24 24" fill="none">
+        <path d="M6 8.5 12 5l6 3.5v7L12 19l-6-3.5v-7Z" stroke="currentColor" strokeWidth="1.8" />
+        <path d="m6.5 9 5.5 3 5.5-3M12 12v6.5" stroke="currentColor" strokeWidth="1.8" />
+      </svg>
+    )
+  }
+
+  if (type === 'assembly') {
+    return (
+      <svg aria-hidden="true" className="size-4" viewBox="0 0 24 24" fill="none">
+        <path d="M7 7h10v10H7V7Z" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M4 10h3M17 10h3M4 14h3M17 14h3M10 4v3M14 4v3M10 17v3M14 17v3" stroke="currentColor" strokeWidth="1.8" />
+      </svg>
+    )
+  }
+
+  return (
+    <svg aria-hidden="true" className="size-4" viewBox="0 0 24 24" fill="none">
+      <path d="M12 5c3.2 2.2 5 4.8 5 7.5A5 5 0 0 1 7 12.5C7 9.8 8.8 7.2 12 5Z" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M10 14c1.7-.3 3.1-1.2 4-2.6" stroke="currentColor" strokeWidth="1.8" />
+    </svg>
+  )
+}
+
+function TreeNode({
+  node,
+  depth = 0,
+  selectedNodeId,
+  expandedNodeIds,
+  impactedNodeIds,
+  issueSourceNodeId,
+  onSelect,
+  onToggleExpanded,
+}) {
   const hasChildren = Boolean(node.children?.length)
   const isSelected = selectedNodeId === node.id
+  const isExpanded = expandedNodeIds.includes(node.id)
+  const isImpacted = impactedNodeIds.includes(node.id)
+  const isIssueSource = issueSourceNodeId === node.id
   const rowStyle = isSelected
-    ? 'border-l-4 border-primary bg-surface-container text-on-surface'
+    ? 'border-l-4 border-secondary bg-secondary-container/35 text-on-surface'
+    : isImpacted
+      ? 'border-l-4 border-trace-amber bg-amber-50 text-on-surface'
     : 'border-l-4 border-transparent text-on-surface-variant hover:bg-surface-container-low'
 
   return (
     <li>
-      <button
-        type="button"
-        onClick={() => onSelect(node.id)}
+      <div
+        data-quality-impact={isImpacted ? 'true' : undefined}
         className={`group flex min-h-12 w-full items-center gap-3 px-3 py-2 text-left transition focus:outline-none focus:ring-2 focus:ring-trace-navy focus:ring-inset ${rowStyle}`}
         style={{ paddingLeft: `${12 + depth * 28}px` }}
-        aria-current={isSelected ? 'true' : undefined}
       >
-        <span className="grid size-8 shrink-0 place-items-center rounded bg-surface-container-high text-[10px] font-bold text-on-surface">
-          {node.icon}
+        <span className="grid size-8 shrink-0 place-items-center rounded bg-surface-container-high text-on-surface">
+          <TreeIcon type={node.icon} />
         </span>
-        <span className="min-w-0 flex-1">
+        <button
+          type="button"
+          onClick={() => onSelect(node.id)}
+          className="min-w-0 flex-1 text-left focus:outline-none"
+          aria-current={isSelected ? 'true' : undefined}
+        >
           <span className="block truncate text-body-sm font-semibold text-on-surface">{node.label}</span>
-          <span className="mt-0.5 flex flex-wrap items-center gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-[0.05em] text-on-surface-variant">
-              {node.type}
-            </span>
-            <StatusBadge status={node.status} />
+          <span className="mt-0.5 block text-[10px] font-bold uppercase tracking-[0.05em] text-on-surface-variant">
+            {isIssueSource ? 'Issue source' : isImpacted ? 'Affected downstream' : node.type}
           </span>
-        </span>
-        {hasChildren ? (
-          <span className="text-body-sm font-bold text-outline transition group-hover:text-primary">+</span>
+        </button>
+        {isImpacted ? (
+          <span
+            className="grid size-8 shrink-0 place-items-center rounded border border-amber-300 bg-amber-100 text-trace-amber"
+            aria-label={`${node.label} affected by quality issue`}
+            title={`${node.label} affected by quality issue`}
+          >
+            <WarningIcon />
+          </span>
         ) : null}
-      </button>
+        {hasChildren ? (
+          <button
+            type="button"
+            onClick={() => onToggleExpanded(node.id)}
+            aria-expanded={isExpanded}
+            aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${node.label}`}
+            className="grid size-8 shrink-0 place-items-center rounded border border-outline-variant bg-surface-container-lowest text-body-sm font-bold text-on-surface-variant transition hover:border-trace-navy hover:bg-surface-container hover:text-trace-navy focus:outline-none focus:ring-2 focus:ring-trace-navy"
+          >
+            {isExpanded ? '-' : '+'}
+          </button>
+        ) : null}
+      </div>
 
-      {hasChildren ? (
+      {hasChildren && isExpanded ? (
         <ul className="relative border-l border-outline-variant/70">
           {node.children.map((child) => (
             <TreeNode
@@ -456,7 +532,11 @@ function TreeNode({ node, depth = 0, selectedNodeId, onSelect }) {
               node={child}
               depth={depth + 1}
               selectedNodeId={selectedNodeId}
+              expandedNodeIds={expandedNodeIds}
+              impactedNodeIds={impactedNodeIds}
+              issueSourceNodeId={issueSourceNodeId}
               onSelect={onSelect}
+              onToggleExpanded={onToggleExpanded}
             />
           ))}
         </ul>
@@ -465,52 +545,172 @@ function TreeNode({ node, depth = 0, selectedNodeId, onSelect }) {
   )
 }
 
-function ProductionJourney({ steps }) {
+function ImpactAnalysis({ scenario, affectedNodes, onTraceIssuePath }) {
   return (
-    <section className="border border-outline-variant bg-surface-container-lowest p-5">
-      <div className="mb-6 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-label-md uppercase text-on-surface-variant">Production Journey</p>
-          <h2 className="text-headline-lg text-on-surface">Batch lifecycle</h2>
+    <section className="border border-trace-amber bg-surface-container-lowest">
+      <div className="border-b border-outline-variant p-5">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div className="min-w-0">
+            <p className="text-label-md uppercase text-trace-amber">Impact Analysis</p>
+            <h2 className="mt-1 text-headline-lg text-on-surface">{scenario.title}</h2>
+            <p className="mt-2 max-w-3xl text-body-sm text-on-surface-variant">{scenario.summary}</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className="rounded-lg bg-amber-100 px-2.5 py-1 text-label-md uppercase text-trace-amber ring-1 ring-amber-200">
+                {scenario.impactCountLabel}
+              </span>
+              <span className="rounded-lg bg-surface-container px-2.5 py-1 text-label-md uppercase text-on-surface-variant ring-1 ring-outline-variant">
+                {scenario.reportedBatchId}
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onTraceIssuePath}
+            className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded bg-trace-navy px-4 py-2 text-body-sm font-semibold text-white transition hover:bg-primary-container focus:outline-none focus:ring-2 focus:ring-trace-navy/30"
+          >
+            <WarningIcon />
+            Report quality issue
+          </button>
         </div>
-        <p className="text-body-sm text-on-surface-variant">Milestones update from the selected node.</p>
       </div>
 
-      <ol className="grid gap-4 md:grid-cols-5">
-        {steps.map((step, index) => (
-          <li key={`${step.label}-${step.date}`} className="relative">
-            <div className="flex items-center gap-3 md:block">
-              <div
-                className={`grid size-9 shrink-0 place-items-center rounded-full text-body-sm font-bold ${
-                  statusStyles[step.status]?.indicator ?? 'bg-surface-container-high text-on-surface-variant'
-                }`}
-              >
-                {index + 1}
+      <div className="grid gap-0 md:grid-cols-[minmax(0,1.1fr)_minmax(260px,0.7fr)]">
+        <div className="border-b border-outline-variant p-5 md:border-b-0 md:border-r">
+          <p className="text-label-md uppercase text-on-surface-variant">Trace path</p>
+          <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-stretch">
+            {affectedNodes.map((node, index) => (
+              <div key={node.id} className="flex min-w-0 flex-1 items-center gap-3">
+                <div className="min-w-0 flex-1 border border-outline-variant bg-surface px-4 py-3">
+                  <div className="mb-2 flex items-center gap-2">
+                    <span className="grid size-7 shrink-0 place-items-center rounded bg-amber-100 text-trace-amber">
+                      <WarningIcon />
+                    </span>
+                    <span className="text-label-md uppercase text-on-surface-variant">
+                      {index === 0 ? 'Issue source' : 'Affected downstream'}
+                    </span>
+                  </div>
+                  <p className="truncate text-table-data text-on-surface">{node.label}</p>
+                  <p className="mt-1 text-label-md uppercase text-on-surface-variant">{node.type}</p>
+                </div>
+                {index < affectedNodes.length - 1 ? (
+                  <span className="hidden text-body-sm font-bold text-outline lg:block" aria-hidden="true">
+                    -&gt;
+                  </span>
+                ) : null}
               </div>
-              <div className="min-w-0 md:mt-3">
-                <p className="truncate text-body-sm font-bold text-on-surface">{step.label}</p>
-                <p className="text-label-md uppercase text-on-surface-variant">{step.date}</p>
-              </div>
-            </div>
-          </li>
-        ))}
-      </ol>
+            ))}
+          </div>
+        </div>
+
+        <div className="p-5">
+          <p className="text-label-md uppercase text-on-surface-variant">Containment action</p>
+          <p className="mt-2 text-body-sm font-semibold text-on-surface">{scenario.containmentAction}</p>
+          <div className="mt-4 border border-outline-variant bg-surface px-4 py-3">
+            <p className="text-label-md uppercase text-on-surface-variant">Reported by</p>
+            <p className="mt-1 text-table-data text-on-surface">
+              {scenario.reportedBy} / {scenario.reportedOn}
+            </p>
+          </div>
+        </div>
+      </div>
     </section>
   )
 }
 
-function ShipmentInformation({ shipment }) {
+function LifecycleConnector({ isLast }) {
+  if (isLast) {
+    return null
+  }
+
+  return (
+    <>
+      <div data-lifecycle-connector="line" aria-hidden="true" className="absolute left-[18px] top-9 h-4 w-px bg-outline-variant md:left-12 md:right-4 md:top-[18px] md:h-px md:w-auto" />
+      <div data-lifecycle-connector="arrow" aria-hidden="true" className="absolute left-[14px] top-[49px] size-2 rotate-45 border-r border-t border-outline-variant md:left-auto md:right-4 md:top-[14px]" />
+    </>
+  )
+}
+
+function BatchDetails({ batches, selectedBatchId, onBatchChange }) {
+  const selectedBatch = batches.find((batch) => batch.id === selectedBatchId) ?? batches[0]
+
   return (
     <section className="border border-outline-variant bg-surface-container-lowest p-5">
-      <div className="mb-4">
-        <p className="text-label-md uppercase text-on-surface-variant">Shipment Information</p>
-        <h2 className="text-headline-lg text-on-surface">Movement record</h2>
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-label-md uppercase text-on-surface-variant">Batch Details</p>
+          <h2 className="text-headline-lg text-on-surface">Production and movement</h2>
+          <p className="mt-1 text-body-sm text-on-surface-variant">
+            Select a batch to update lifecycle and shipment information.
+          </p>
+        </div>
+        <label className="min-w-0 sm:w-64">
+          <span className="mb-2 block text-label-md uppercase text-on-surface-variant">Select Batch</span>
+          <select
+            value={selectedBatch.id}
+            onChange={(event) => onBatchChange(event.target.value)}
+            className="w-full rounded border border-outline-variant bg-surface-container-lowest px-3 py-2 text-body-sm font-semibold text-on-surface focus:border-trace-navy focus:outline-none focus:ring-2 focus:ring-trace-navy/20"
+          >
+            {batches.map((batch) => (
+              <option key={batch.id} value={batch.id}>
+                {batch.id}
+                {batch.isLatest ? ' (latest)' : ''}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+
+      <div className="mb-6 grid gap-3 sm:grid-cols-2">
+        <div className="border border-outline-variant bg-surface px-4 py-3">
+          <p className="text-label-md uppercase text-on-surface-variant">Batch Quantity</p>
+          <p className="mt-2 break-words text-table-data text-on-surface">{selectedBatch.quantity}</p>
+        </div>
+        <div className="border border-outline-variant bg-surface px-4 py-3">
+          <p className="text-label-md uppercase text-on-surface-variant">Movement Status</p>
+          <p className="mt-2 text-table-data text-on-surface">{selectedBatch.shipment.status}</p>
+        </div>
+      </div>
+
+      <div className="mb-8">
+        <div className="mb-5 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-label-md uppercase text-on-surface-variant">Production Journey</p>
+            <h3 className="text-headline-lg text-on-surface">Batch lifecycle</h3>
+          </div>
+          <p className="text-body-sm text-on-surface-variant">{selectedBatch.id}</p>
+        </div>
+
+        <ol className="grid gap-4 md:grid-cols-5">
+          {selectedBatch.journeySteps.map((step, index) => (
+            <li key={`${selectedBatch.id}-${step.label}-${step.date}`} className="relative">
+              <LifecycleConnector isLast={index === selectedBatch.journeySteps.length - 1} />
+              <div className="flex items-center gap-3 md:block">
+                <div
+                  className={`relative z-10 grid size-9 shrink-0 place-items-center rounded-full text-body-sm font-bold ${
+                    statusStyles[step.status]?.indicator ?? 'bg-surface-container-high text-on-surface-variant'
+                  }`}
+                >
+                  {index + 1}
+                </div>
+                <div className="min-w-0 md:mt-3">
+                  <p className="truncate text-body-sm font-bold text-on-surface">{step.label}</p>
+                  <p className="text-label-md uppercase text-on-surface-variant">{step.date}</p>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      <div>
+        <p className="text-label-md uppercase text-on-surface-variant">Shipment Information</p>
+        <h3 className="text-headline-lg text-on-surface">Movement record</h3>
+      </div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {shipmentFields.map(([label, key]) => (
           <div key={key} className="min-w-0 border border-outline-variant bg-surface px-4 py-3">
             <p className="text-label-md uppercase text-on-surface-variant">{label}</p>
-            <p className="mt-2 break-words text-table-data text-on-surface">{shipment[key]}</p>
+            <p className="mt-2 break-words text-table-data text-on-surface">{selectedBatch.shipment[key]}</p>
           </div>
         ))}
       </div>
@@ -518,8 +718,10 @@ function ShipmentInformation({ shipment }) {
   )
 }
 
-function InspectorPanel({ selectedNode, details }) {
-  const panelStyle = statusStyles[details.status]?.panel ?? statusStyles.Pending.panel
+function InspectorPanel({ selectedNode, details, activeIssue }) {
+  const issueTouchesNode = activeIssue?.impactedNodeIds.includes(selectedNode.id)
+  const displayStatus = issueTouchesNode ? activeIssue.severity : details.status
+  const panelStyle = statusStyles[displayStatus]?.panel ?? statusStyles.Pending.panel
 
   return (
     <aside className="min-w-0 border border-outline-variant bg-surface-container-lowest lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
@@ -530,24 +732,31 @@ function InspectorPanel({ selectedNode, details }) {
             <h2 className="mt-1 break-words text-headline-lg text-on-surface">{selectedNode.label}</h2>
             <p className="mt-1 text-body-sm text-on-surface-variant">{selectedNode.type}</p>
           </div>
-          <StatusBadge status={details.status} />
         </div>
 
         <div className="mb-6 flex items-center gap-4 bg-surface-container p-4">
           <div
             className={`grid size-11 shrink-0 place-items-center rounded-full text-body-sm font-bold ${
-              statusStyles[details.status]?.indicator ?? statusStyles.Pending.indicator
+              statusStyles[displayStatus]?.indicator ?? statusStyles.Pending.indicator
             }`}
           >
-            {details.status === 'Verified' ? 'OK' : details.status === 'Pending' ? 'PD' : 'MV'}
+            {issueTouchesNode ? <WarningIcon /> : details.status === 'Verified' ? 'OK' : details.status === 'Pending' ? 'PD' : 'MV'}
           </div>
           <div>
             <p className="text-label-md uppercase text-on-surface-variant">Verification Status</p>
             <p className="text-body-sm font-bold text-on-surface">
-              {details.status === 'Verified' ? 'Verified and active' : details.status}
+              {issueTouchesNode ? activeIssue.severity : details.status === 'Verified' ? 'Verified and active' : details.status}
             </p>
           </div>
         </div>
+
+        {issueTouchesNode ? (
+          <div className="mb-6 border border-trace-amber bg-amber-50 p-4">
+            <p className="text-label-md uppercase text-trace-amber">Quality issue linked</p>
+            <p className="mt-2 text-body-sm font-semibold text-on-surface">{activeIssue.title}</p>
+            <p className="mt-1 text-body-sm text-on-surface-variant">{activeIssue.containmentAction}</p>
+          </div>
+        ) : null}
 
         <dl className="space-y-4">
           <DetailRow label="Supplier" value={details.supplier} />
@@ -579,19 +788,6 @@ function InspectorPanel({ selectedNode, details }) {
           </div>
         </dl>
 
-        <div className="mt-6">
-          <p className="mb-3 text-label-md uppercase text-on-surface-variant">Evidence Records</p>
-          <ul className="space-y-3">
-            {details.evidence.map((record) => (
-              <li key={`${record.label}-${record.date}`} className="border border-outline-variant bg-surface px-4 py-3">
-                <p className="text-body-sm font-bold text-on-surface">{record.label}</p>
-                <p className="mt-1 text-body-sm text-on-surface-variant">
-                  {record.source} / {record.date}
-                </p>
-              </li>
-            ))}
-          </ul>
-        </div>
       </div>
     </aside>
   )
@@ -624,15 +820,107 @@ function findNode(nodes, id) {
   return null
 }
 
+function findPathToNode(nodes, id, path = []) {
+  for (const node of nodes) {
+    const nextPath = [...path, node]
+
+    if (node.id === id) {
+      return nextPath
+    }
+
+    if (node.children) {
+      const childPath = findPathToNode(node.children, id, nextPath)
+
+      if (childPath.length) {
+        return childPath
+      }
+    }
+  }
+
+  return []
+}
+
+function createBatchOptions(details) {
+  const latestBatch = {
+    ...details.latestBatch,
+    isLatest: true,
+    shipment: details.shipment,
+    journeySteps: details.journeySteps,
+  }
+
+  const previousBatches = details.previousBatches.map((batch, index) => ({
+    ...batch,
+    isLatest: false,
+    shipment: createHistoricalShipment(details.shipment, batch, index),
+    journeySteps: createHistoricalJourney(details.journeySteps, index),
+  }))
+
+  return [latestBatch, ...previousBatches]
+}
+
+function createHistoricalShipment(shipment, batch, index) {
+  return {
+    ...shipment,
+    received: batch.quantity,
+    inventory: index === 0 ? '0 units' : '-',
+    shipped: batch.quantity,
+    number: `${shipment.number}-P${index + 1}`,
+    status: 'Archived',
+  }
+}
+
+function createHistoricalJourney(steps, index) {
+  return steps.map((step, stepIndex) => ({
+    ...step,
+    status: 'Complete',
+    date: index === 0 ? step.date : stepIndex === steps.length - 1 ? 'Archived' : step.date,
+  }))
+}
+
 function App() {
   const [selectedNodeId, setSelectedNodeId] = useState('mesh')
+  const [expandedNodeIds, setExpandedNodeIds] = useState(['trail-runner', 'upper', 'midsole', 'outsole', 'laces'])
+  const [activeIssueId, setActiveIssueId] = useState(qualityIssueScenario.sourceNodeId)
   const selectedNode = findNode(traceNodes, selectedNodeId) ?? traceNodes[0]
   const selectedDetails = nodeDetails[selectedNode.id]
+  const batchOptions = useMemo(() => createBatchOptions(selectedDetails), [selectedDetails])
+  const activeIssue = activeIssueId ? qualityIssueScenario : null
+  const traceIssuePath = useMemo(
+    () => findPathToNode(traceNodes, qualityIssueScenario.sourceNodeId),
+    [],
+  )
+  const affectedNodes = traceIssuePath.toReversed()
+  const impactedNodeIds = activeIssue?.impactedNodeIds ?? []
+  const [selectedBatchId, setSelectedBatchId] = useState(batchOptions[0].id)
+
+  useEffect(() => {
+    setSelectedBatchId(batchOptions[0].id)
+  }, [batchOptions])
+
+  function toggleNodeExpanded(nodeId) {
+    setExpandedNodeIds((currentNodeIds) =>
+      currentNodeIds.includes(nodeId)
+        ? currentNodeIds.filter((currentNodeId) => currentNodeId !== nodeId)
+        : [...currentNodeIds, nodeId],
+    )
+  }
+
+  function traceIssuePathToSource() {
+    setActiveIssueId(qualityIssueScenario.sourceNodeId)
+    setSelectedNodeId(qualityIssueScenario.sourceNodeId)
+    setExpandedNodeIds((currentNodeIds) => {
+      const pathNodeIds = traceIssuePath
+        .filter((node) => node.children?.length)
+        .map((node) => node.id)
+
+      return Array.from(new Set([...currentNodeIds, ...pathNodeIds]))
+    })
+  }
 
   return (
     <main className="min-h-screen bg-background text-background-foreground">
       <header className="sticky top-0 z-30 border-b border-outline-variant bg-surface-container-lowest/95 backdrop-blur">
-        <div className="mx-auto flex max-w-content items-center justify-between gap-4 px-margin-mobile py-4 sm:px-gutter lg:px-margin-desktop">
+        <div className="mx-auto flex max-w-content items-center gap-4 px-margin-mobile py-4 sm:px-gutter lg:px-margin-desktop">
           <div className="flex min-w-0 items-center gap-3">
             <div className="grid size-10 shrink-0 place-items-center rounded bg-trace-navy text-body-md font-bold text-white">
               T
@@ -644,18 +932,6 @@ function App() {
               </p>
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
-            {['QA', 'AL', 'US'].map((item) => (
-              <button
-                key={item}
-                type="button"
-                className="grid size-9 place-items-center rounded-full border border-outline-variant bg-surface-container-lowest text-[11px] font-bold text-on-surface-variant transition hover:bg-surface-container focus:outline-none focus:ring-2 focus:ring-trace-navy"
-                aria-label={`${item} action`}
-              >
-                {item}
-              </button>
-            ))}
-          </div>
         </div>
       </header>
 
@@ -664,68 +940,52 @@ function App() {
           <section className="border border-outline-variant bg-surface-container-lowest">
             <div className="border-b border-outline-variant p-5">
               <p className="text-label-md uppercase text-secondary">Traceability Hierarchy</p>
-              <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div className="mt-2">
                 <div>
                   <h1 className="text-headline-xl text-on-surface">Trail Runner</h1>
                   <p className="mt-1 max-w-2xl text-body-sm text-on-surface-variant">
                     Select a component or material to inspect supplier, batch, shipment, and audit evidence.
                   </p>
                 </div>
-                <StatusBadge status="Verified" />
               </div>
             </div>
 
-            <div className="grid gap-0 xl:grid-cols-[minmax(280px,420px)_1fr]">
-              <nav className="border-b border-outline-variant xl:border-b-0 xl:border-r" aria-label="Product trace tree">
+            <div>
+              <nav aria-label="Product trace tree">
                 <ul className="divide-y divide-outline-variant/70">
                   {traceNodes.map((node) => (
                     <TreeNode
                       key={node.id}
                       node={node}
                       selectedNodeId={selectedNodeId}
+                      expandedNodeIds={expandedNodeIds}
+                      impactedNodeIds={impactedNodeIds}
+                      issueSourceNodeId={qualityIssueScenario.sourceNodeId}
                       onSelect={setSelectedNodeId}
+                      onToggleExpanded={toggleNodeExpanded}
                     />
                   ))}
                 </ul>
               </nav>
-
-              <div className="min-w-0 bg-surface p-5">
-                <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-label-md uppercase text-on-surface-variant">Selected Scope</p>
-                    <h2 className="text-headline-lg text-on-surface">{selectedNode.label}</h2>
-                  </div>
-                  <StatusBadge status={selectedDetails.status} />
-                </div>
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <div className="border border-outline-variant bg-surface-container-lowest px-4 py-3">
-                    <p className="text-label-md uppercase text-on-surface-variant">Supplier</p>
-                    <p className="mt-2 break-words text-body-sm font-semibold text-on-surface">
-                      {selectedDetails.supplier}
-                    </p>
-                  </div>
-                  <div className="border border-outline-variant bg-surface-container-lowest px-4 py-3">
-                    <p className="text-label-md uppercase text-on-surface-variant">Latest Lot</p>
-                    <p className="mt-2 break-words text-body-sm font-semibold text-on-surface">
-                      {selectedDetails.latestBatch.id}
-                    </p>
-                  </div>
-                  <div className="border border-outline-variant bg-surface-container-lowest px-4 py-3">
-                    <p className="text-label-md uppercase text-on-surface-variant">Evidence</p>
-                    <p className="mt-2 text-body-sm font-semibold text-on-surface">
-                      {selectedDetails.evidence.length} records
-                    </p>
-                  </div>
-                </div>
-              </div>
             </div>
           </section>
 
-          <ProductionJourney steps={selectedDetails.journeySteps} />
-          <ShipmentInformation shipment={selectedDetails.shipment} />
+          {activeIssue ? (
+            <ImpactAnalysis
+              scenario={activeIssue}
+              affectedNodes={affectedNodes}
+              onTraceIssuePath={traceIssuePathToSource}
+            />
+          ) : null}
+
+          <BatchDetails
+            batches={batchOptions}
+            selectedBatchId={selectedBatchId}
+            onBatchChange={setSelectedBatchId}
+          />
         </div>
 
-        <InspectorPanel selectedNode={selectedNode} details={selectedDetails} />
+        <InspectorPanel selectedNode={selectedNode} details={selectedDetails} activeIssue={activeIssue} />
       </div>
     </main>
   )
